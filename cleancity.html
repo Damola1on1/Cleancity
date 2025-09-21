@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoCycle - Smart Recycling App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary-color: #2E7D32;
+            --secondary-color: #1B5E20;
+            --accent-color: #4CAF50;
+            --light-color: #E8F5E9;
+            --dark-color: #1B5E20;
+            --text-color: #333;
+            --white: #FFFFFF;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 1rem 0;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 1.8rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 20px;
+        }
+
+        nav a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.3s;
+        }
+
+        nav a:hover {
+            opacity: 0.8;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .hero {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1600585152220-90363fe7e115?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');
+            background-size: cover;
+            background-position: center;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--white);
+            margin-bottom: 2rem;
+        }
+
+        .hero-content h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            max-width: 700px;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--white);
+            margin-left: 1rem;
+        }
+
+        .btn-outline:hover {
+            background-color: var(--white);
+            color: var(--primary-color);
+        }
+
+        .main {
+            padding: 2rem 0;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--dark-color);
+        }
+
+        .map-container {
+            height: 500px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        #recyclingMap {
+            height: 100%;
+            width: 100%;
+            border-radius: var(--border-radius);
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .map-btn {
+            background-color: var(--white);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .search-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            width: calc(100% - 40px);
+            max-width: 400px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: var(--shadow);
+            font-size: 1rem;
+        }
+
+        .filter-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            background-color: var(--white);
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        .recycling-points {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .point-card {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s;
+        }
+
+        .point-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .point-image {
+            height: 150px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .point-content {
+            padding: 1.5rem;
+        }
+
+        .point-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .point-name {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .point-distance {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .point-type {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            background-color: var(--light-color);
+            color: var(--primary-color);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .point-address {
+            color: #666;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .point-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .point-rating {
+            color: #FFC107;
+            font-weight: 600;
+        }
+
+        .point-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-card i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+        }
+
+        .recycling-companies {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 3rem;
+        }
+
+        .company-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .company-card {
+            background-color: var(--light-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            transition: transform 0.3s;
+        }
+
+        .company-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .company-name {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .company-specialty {
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .company-contact {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .schedule-pickup {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 3rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        footer {
+            background-color: var(--dark-color);
+            color: var(--white);
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-links a {
+            color: var(--white);
+            font-size: 1.5rem;
+            transition: opacity 0.3s;
+        }
+
+        .social-links a:hover {
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+                display: none;
+            }
+
+            nav ul.active {
+                display: flex;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .hero-content h2 {
+                font-size: 2rem;
+            }
+
+            .hero-content p {
+                font-size: 1rem;
+            }
+
+            .btn-group {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .btn-outline {
+                margin-left: 0;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .map-container {
+                height: 400px;
+            }
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal-title {
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <i class="fas fa-recycle"></i>
+                <h1>EcoCycle</h1>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <nav>
+                <ul id="navMenu">
+                    <li><a href="#map">Find Centers</a></li>
+                    <li><a href="#companies">Recyclers</a></li>
+                    <li><a href="#schedule">Schedule Pickup</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#login">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h2>Smart Recycling for a Cleaner Planet</h2>
+            <p>Find nearby recycling centers, connect with waste collectors, and earn rewards for your eco-friendly actions</p>
+            <div class="btn-group">
+                <a href="#map" class="btn">Find Centers Near You</a>
+                <a href="#schedule" class="btn btn-outline">Schedule Pickup</a>
+            </div>
+        </div>
+    </section>
+
+    <main class="main">
+        <div class="container">
+            <section id="map">
+                <h2 class="section-title">Find Recycling Points Near You</h2>
+                <div class="map-container">
+                    <div id="recyclingMap"></div>
+                    <div class="map-controls">
+                        <button class="map-btn" id="locateBtn" title="Locate me">
+                            <i class="fas fa-location-arrow"></i>
+                        </button>
+                        <button class="map-btn" id="zoomInBtn" title="Zoom in">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="map-btn" id="zoomOutBtn" title="Zoom out">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="Search for recycling points...">
+                    </div>
+                </div>
+
+                <div class="filter-container">
+                    <button class="filter-btn active">All</button>
+                    <button class="filter-btn">Plastic</button>
+                    <button class="filter-btn">Paper</button>
+                    <button class="filter-btn">Glass</button>
+                    <button class="filter-btn">Metal</button>
+                    <button class="filter-btn">Electronics</button>
+                    <button class="filter-btn">Organic</button>
+                </div>
+
+                <div class="recycling-points">
+                    <div class="point-card">
+                        <div class="point-image" style="background-image: url('https://images.unsplash.com/photo-1587135991058-8816a5a7e967?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');"></div>
+                        <div class="point-content">
+                            <div class="point-header">
+                                <h3 class="point-name">Green Valley Recycling</h3>
+                                <span class="point-distance">0.8 mi</span>
+                            </div>
+                            <span class="point-type">Plastic • Paper • Metal</span>
+                            <p class="point-address">123 Eco Street, Greenville, GV 12345</p>
+                            <div class="point-meta">
+                                <span class="point-rating">
+                                    <i class="fas fa-star"></i> 4.7
+                                </span>
+                                <div class="point-actions">
+                                    <button class="action-btn" title="Directions">
+                                        <i class="fas fa-directions"></i>
+                                    </button>
+                                    <button class="action-btn" title="Save">
+                                        <i class="far fa-bookmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="point-card">
+                        <div class="point-image" style="background-image: url('https://images.unsplash.com/photo-1604176354204-9268737828e4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');"></div>
+                        <div class="point-content">
+                            <div class="point-header">
+                                <h3 class="point-name">E-Waste Solutions</h3>
+                                <span class="point-distance">1.2 mi</span>
+                            </div>
+                            <span class="point-type">Electronics • Batteries</span>
+                            <p class="point-address">456 Tech Park, Greenville, GV 12345</p>
+                            <div class="point-meta">
+                                <span class="point-rating">
+                                    <i class="fas fa-star"></i> 4.9
+                                </span>
+                                <div class="point-actions">
+                                    <button class="action-btn" title="Directions">
+                                        <i class="fas fa-directions"></i>
+                                    </button>
+                                    <button class="action-btn" title="Save">
+                                        <i class="far fa-bookmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="point-card">
+                        <div class="point-image" style="background-image: url('https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');"></div>
+                        <div class="point-content">
+                            <div class="point-header">
+                                <h3 class="point-name">Community Recycling Hub</h3>
+                                <span class="point-distance">1.5 mi</span>
+                            </div>
+                            <span class="point-type">All Materials</span>
+                            <p class="point-address">789 Main Street, Greenville, GV 12345</p>
+                            <div class="point-meta">
+                                <span class="point-rating">
+                                    <i class="fas fa-star"></i> 4.5
+                                </span>
+                                <div class="point-actions">
+                                    <button class="action-btn" title="Directions">
+                                        <i class="fas fa-directions"></i>
+                                    </button>
+                                    <button class="action-btn" title="Save">
+                                        <i class="far fa-bookmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="companies" class="recycling-companies">
+                <h2 class="section-title">Connect with Recycling Companies</h2>
+                <p class="text-center">Find professional waste management companies that can collect your recyclables</p>
+                
+                <div class="company-list">
+                    <div class="company-card">
+                        <h3 class="company-name">EcoCollect</h3>
+                        <p class="company-specialty">Plastic • Paper • Metal Collection</p>
+                        <p>Weekly pickup services for businesses and residential areas.</p>
+                        <p class="company-contact">
+                            <i class="fas fa-phone"></i> (555) 123-4567<br>
+                            <i class="fas fa-envelope"></i> contact@ecocollect.com
+                        </p>
+                        <button class="btn" style="width: 100%; margin-top: 1rem;">Request Pickup</button>
+                    </div>
+
+                    <div class="company-card">
+                        <h3 class="company-name">GreenTech Recycling</h3>
+                        <p class="company-specialty">E-Waste • Hazardous Materials</p>
+                        <p>Specialized in electronics and hazardous waste disposal.</p>
+                        <p class="company-contact">
+                            <i class="fas fa-phone"></i> (555) 987-6543<br>
+                            <i class="fas fa-envelope"></i> info@greentechrecycle.com
+                        </p>
+                        <button class="btn" style="width: 100%; margin-top: 1rem;">Request Pickup</button>
+                    </div>
+
+                    <div class="company-card">
+                        <h3 class="company-name">Organic Solutions</h3>
+                        <p class="company-specialty">Compost • Organic Waste</p>
+                        <p>Turn your food waste into nutrient-rich compost.</p>
+                        <p class="company-contact">
+                            <i class="fas fa-phone"></i> (555) 456-7890<br>
+                            <i class="fas fa-envelope"></i> hello@organicsolutions.com
+                        </p>
+                        <button class="btn" style="width: 100%; margin-top: 1rem;">Request Pickup</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="schedule" class="schedule-pickup">
+                <h2 class="section-title">Schedule a Pickup</h2>
+                <p class="text-center">Have large amounts of recyclables? Schedule a pickup with our partners</p>
+                
+                <form id="pickupForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="name">Full Name</label>
+                            <input type="text" class="form-control" id="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="email">Email</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="phone">Phone</label>
+                            <input type="tel" class="form-control" id="phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="address">Address</label>
+                            <input type="text" class="form-control" id="address" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="materials">Materials to Recycle</label>
+                        <select class="form-control" id="materials" multiple>
+                            <option value="plastic">Plastic</option>
+                            <option value="paper">Paper</option>
+                            <option value="glass">Glass</option>
+                            <option value="metal">Metal</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="organic">Organic Waste</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="date">Preferred Date</label>
+                            <input type="date" class="form-control" id="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="time">Preferred Time</label>
+                            <input type="time" class="form-control" id="time" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="notes">Additional Notes</label>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn" style="width: 100%;">Schedule Pickup</button>
+                </form>
+            </section>
+
+            <section class="features-section">
+                <h2 class="section-title">Why Choose EcoCycle?</h2>
+                <div class="features">
+                    <div class="feature-card">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <h3>Find Nearby Centers</h3>
+                        <p>Locate the closest recycling points for any material type with our comprehensive database.</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-truck"></i>
+                        <h3>Schedule Pickups</h3>
+                        <p>Connect with professional waste collectors who can pick up your recyclables at your convenience.</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-award"></i>
+                        <h3>Earn Rewards</h3>
+                        <p>Get points for your recycling efforts that can be redeemed for discounts and gifts.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal for Point Details -->
+    <div class="modal" id="pointModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <h3 class="modal-title">Recycling Point Details</h3>
+            <div id="modalContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="logo">
+                <i class="fas fa-recycle"></i>
+                <h2>EcoCycle</h2>
+            </div>
+            <p>Making recycling easy and rewarding for everyone</p>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+            </div>
+            <p>&copy; 2025 EcoCycle by Quadri Ayoade. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const navMenu = document.getElementById('navMenu');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            navMenu.classList.toggle('active');
+        });
+
+        // Initialize map
+        const map = L.map('recyclingMap').setView([51.505, -0.09], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Add sample markers
+        const recyclingPoints = [
+            {
+                id: 1,
+                name: "Green Valley Recycling",
+                position: [51.505, -0.09],
+                type: ["plastic", "paper", "metal"],
+                address: "123 Eco Street, Greenville, GV 12345",
+                hours: "Mon-Fri: 8AM-6PM, Sat: 9AM-4PM",
+                rating: 4.7
+            },
+            {
+                id: 2,
+                name: "E-Waste Solutions",
+                position: [51.51, -0.1],
+                type: ["electronics", "batteries"],
+                address: "456 Tech Park, Greenville, GV 12345",
+                hours: "Mon-Sat: 9AM-5PM",
+                rating: 4.9
+            },
+            {
+                id: 3,
+                name: "Community Recycling Hub",
+                position: [51.515, -0.095],
+                type: ["plastic", "paper", "glass", "metal", "electronics"],
+                address: "789 Main Street, Greenville, GV 12345",
+                hours: "Mon-Sun: 7AM-7PM",
+                rating: 4.5
+            }
+        ];
+
+        // Add markers to map
+        recyclingPoints.forEach(point => {
+            const marker = L.marker(point.position).addTo(map);
+            marker.bindPopup(`<b>${point.name}</b><br>${point.address}<br>Accepts: ${point.type.join(', ')}`);
+            
+            // Add click event to show modal
+            marker.on('click', function() {
+                showPointDetails(point);
+            });
+        });
+
+        // Map controls
+        document.getElementById('locateBtn').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    map.setView([position.coords.latitude, position.coords.longitude], 15);
+                    L.marker([position.coords.latitude, position.coords.longitude])
+                        .addTo(map)
+                        .bindPopup("Your location")
+                        .openPopup();
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        });
+
+        document.getElementById('zoomInBtn').addEventListener('click', function() {
+            map.zoomIn();
+        });
+
+        document.getElementById('zoomOutBtn').addEventListener('click', function() {
+            map.zoomOut();
+        });
+
+        // Filter buttons
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                // In a real app, you would filter the points here
+            });
+        });
+
+        // Point cards click events
+        const pointCards = document.querySelectorAll('.point-card');
+        pointCards.forEach((card, index) => {
+            card.addEventListener('click', function() {
+                showPointDetails(recyclingPoints[index]);
+            });
+        });
+
+        // Modal functionality
+        const modal = document.getElementById('pointModal');
+        const closeModal = document.getElementById('closeModal');
+
+        function showPointDetails(point) {
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <h4>${point.name}</h4>
+                <p><i class="fas fa-map-marker-alt"></i> ${point.address}</p>
+                <p><i class="fas fa-clock"></i> ${point.hours}</p>
+                <p><i class="fas fa-star"></i> Rating: ${point.rating}/5</p>
+                <p><strong>Accepts:</strong> ${point.type.join(', ')}</p>
+                <button class="btn" style="width: 100%; margin-top: 1rem;">
+                    <i class="fas fa-directions"></i> Get Directions
+                </button>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        closeModal.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Form submission
+        document.getElementById('pickupForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Pickup request submitted successfully! A representative will contact you shortly.');
+            this.reset();
+        });
+
+        // In a real application, you would:
+        // 1. Connect to a backend API to get real recycling points data
+        // 2. Implement user authentication
+        // 3. Add actual routing functionality
+        // 4. Implement reward system
+        // 5. Add more advanced filtering and search
+    </script>
+</body>
+</html>
